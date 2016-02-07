@@ -72,13 +72,33 @@ class Albumizer
   
   def pre_flight_check(metadata)
     puts "Checking for track listing..."
-    pattern = /^
+    patterns = [
+      /^
       (\d+).     # track number and decimal
       .*?        # ...
       \"(.*?)\"  # track name in quotes
       .*?        # ...
       (\d+:\d+)  # start time of this track
-    /x
+      /x,
+      
+      /^
+      (\d+).     # track number and decimal
+      \s+        # whitespace
+      (.*)       # track name
+      \s?\s      # whitespace and any separator
+      (\d+:\d+)  # start time of this track
+      /x
+    ]
+    
+    pattern = patterns.detect do |pat|
+      metadata['description'].split("\n").map(&:strip).select { |e| e =~ pat }.length > 0
+    end
+    
+    if pattern.nil?
+      puts metadata['description']
+      puts "\nUnable to parse track listing data.  Exiting."
+      exit(1)
+    end
     
     track_list = metadata['description'].split("\n").map(&:strip).select { |e| e =~ pattern }
     
