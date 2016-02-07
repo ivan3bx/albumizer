@@ -8,14 +8,18 @@ class Albumizer
   attr_accessor :options, :url
 
   def parse_options
-    options = {}
+    options = {:output_dir => "."}
     OptionParser.new do |opts|
       opts.banner = "Usage: albumizer.rb [URL]"
   
       opts.on("-v", "--[no-]verbose", "Show output") do |arg|
         options[:verbose] = arg
       end
-    
+      
+      opts.on("-o", "--output DIRECTORY", "Output to directory") do |arg|
+        options[:output_dir] = arg
+      end
+      
       opts.on("-n", "--[no-]skip-download", "Show the plan but don't download media") do |arg|
         options[:skip_download] = arg
       end
@@ -35,7 +39,14 @@ class Albumizer
     
   def run()
     parse_options
-      
+    
+    # Validate output directory
+    output_dir = self.options[:output_dir]
+    if !Dir.exist?(output_dir)
+      p "Output directory '#{self.options[:output_dir]}'does not exist"
+      exit(1)
+    end
+    
     # Grab file metadata & verify
     description = load_metadata(url)
     metadata    = pre_flight_check(description)
@@ -115,7 +126,7 @@ class Albumizer
       # start/stop depend on metadata from current/next track
       start = track[:start]
       stop  = index < metadata.length - 1 ? metadata[index+1][:start] : nil
-      track_file = "#{track[:number]}. #{track[:title]}.m4a"
+      track_file = File.join(self.options[:output_dir], "#{track[:number]}. #{track[:title]}.m4a")
       
       # Run the command
       cmd_result = `#{ffmpeg_cmd(file, start, stop, track_file)} 2>&1`
