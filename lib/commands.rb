@@ -3,7 +3,7 @@ require 'tmpdir'
 module Commands
   YOUTUBE_DL = '/usr/local/bin/youtube-dl'
   YOUTUBE_OPTS = "-x"
-  YOUTUBE_DEBUG_OPTS = %w{--write-info-json --write-description}
+  YOUTUBE_DEBUG_OPTS = "--write-info-json --write-description"
   YOUTUBE_CHECK_OPTS = "-qj"
 
   FFMPEG = '/usr/local/bin/ffmpeg'
@@ -21,14 +21,36 @@ module Commands
     # Pass through any debug options & URL
     cmd += " #{YOUTUBE_DEBUG_OPTS}" if verbose?
     cmd += " #{url}"
+    
+    if verbose?
+      puts "Download command: #{cmd}"
+    end
+    
+    cmd
   end
   
-  def ffmpeg_cmd(input_file, start, stop, output_file)
-    if stop.nil?
-      "#{FFMPEG} -i \"#{input_file}\" -vn -c copy -ss #{start} \"#{output_file}\""
+  def ffmpeg_cmd(input_file, album_info, track_info, output_file)
+    tags = { }
+    tags["title"]  = track_info.title
+    tags["track"]  = "#{track_info.number.to_i}/#{album_info.num_tracks}" if track_info.number
+    tags["album"]  = album_info.title if album_info.title
+    tags["year"]   = album_info.year if album_info.year
+    tags["artist"] = album_info.artist if album_info.artist
+    tags["genre"]  = album_info.genre if album_info.genre
+    
+    metadata = tags.inject([]) { |m,e| m << "-metadata #{e[0]}=\"#{e[1]}\"" }.join(" ")
+    
+    if track_info.stop.nil?
+      cmd = "#{FFMPEG} -y -i \"#{input_file}\" -vn -c copy #{metadata} -ss #{track_info.start} \"#{output_file}\""
     else
-      "#{FFMPEG} -i \"#{input_file}\" -vn -c copy -ss #{start} -to #{stop} \"#{output_file}\""
+      cmd = "#{FFMPEG} -y -i \"#{input_file}\" -vn -c copy #{metadata} -ss #{track_info.start} -to #{track_info.stop} \"#{output_file}\""
     end
+    
+    if verbose?
+      puts " #{cmd}"
+    end
+
+    cmd
   end
   
 end
