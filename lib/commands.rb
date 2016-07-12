@@ -2,7 +2,7 @@ require 'tmpdir'
 
 module Commands
   YOUTUBE_DL = '/usr/local/bin/youtube-dl'
-  YOUTUBE_OPTS = "-x"
+  YOUTUBE_OPTS = "-x --audio-format=m4a"
   YOUTUBE_DEBUG_OPTS = "--write-info-json --write-description"
   YOUTUBE_CHECK_OPTS = "-qj"
 
